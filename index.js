@@ -5,25 +5,94 @@ async function scrape(link) {
     return new Promise(async (resolve, reject) => {
         const browser = await puppeteer.launch({
             headless: true, defaultViewport: null,
-            args: [`--disable-extensions-except=${__dirname}/ublock/ublock`, `--load-extension=${__dirname}/ublock/ublock`]
+            args: ['--blink-settings=imagesEnabled=false', `--disable-extensions-except=${__dirname}/ublock/ublock`, `--load-extension=${__dirname}/ublock/ublock`]
         });
         try {
             const page = await browser.newPage();
+
             await page.goto(link);
-            await page.waitFor(10000)
-            await page.click("#skip_button")
-            await page.waitFor(3000)
-            let title = await page.url();
-            await page.waitForNavigation({ waitUntil: 'networkidle0' })
+            let i = 0;
+            page.on("response", async e => {
+                let po = await page.evaluate(() => {
+                    return document.getElementById("detecting_bot_info").getAttribute("class")
+                })
+                console.log(po)
+                if (po.indexOf("show") != -1) {
+                    reject("s")
+                    browser.close()
+                }
+                // if (e.request().resourceType() === "xhr") {
+                //     console.log(e.request().resourceType())
+                //     const pa = await e.text()
+                //     console.log(pa)
+                // }
+                // if (i === 9) {
+                //     throw new Error("s")
+                //     // await browser.close();
+                // }
+                if (e.request().resourceType() === "script") {
+                    console.log(e.request().resourceType())
+                    const pa = await e.text()
+                    if (pa.indexOf("destinationUrl") != -1) {
+                        const hasilnya = pa.split("(")[1].replace(";", "").replace(")", "");
+                        let me = JSON.parse(hasilnya).destinationUrl
+
+                        resolve(me)
+                        await browser.close();
+                    }
+                    // console.log(pa)
+                }
+            })
+
+
+            // page.on("response", e => {
+            //     console.log(e)
+            // })
+            // console.log("remove iframe")
+            // page.waitFor(3000)
+            // var aj = await page.evaluate(() => {
+            //     const j = document.getElementsByTagName("iframe");
+            //     return j
+            // })
+            // while (aj === undefined) {
+            //     aj = await page.evaluate(() => {
+            //         const j = document.getElementsByTagName("iframe");
+            //         return j
+            //     })
+            // }
+            // await page.evaluate(() => {
+            //     const j = document.getElementsByTagName("iframe");
+            //     j.forEach(a => a.remove())
+            //     // return j
+            // })
+
+            // await page.click("#skip_button")
+            // console.log("skip")
+            // await page.waitFor(3000)
+            // console.log("get the url")
+            // var title = await page.url();
+            // let i = 0;
+            // // await page.waitForNavigation({ waitUntil: 'networkidle0' })
+
             // while (title.trim() === link.trim()) {
+            //     i++
             //     title = await page.url()
+            //     if (i === 3) {
+            //         break;
+            //     }
             //     // await page.waitFor(1000)
             // }
-            resolve(title)
-            await browser.close();
+            // if (title.trim() === link.trim()) {
+            //     throw new Error("try")
+            // } else {
+            //     resolve(title)
+            // }
+
+
         } catch (e) {
-            await browser.close();
             reject(e.message)
+            await browser.close();
+
         }
 
     })
@@ -35,7 +104,8 @@ async function tryAgain(link) {
             const title = await scrape(link);
             resolve(title)
         } catch (e) {
-            console.log("try again")
+            // reject(e.message)
+            console.log("try again 2")
             // await browser.close();
             await sleep(3000)
             const title = await runUntilWorks(link);
@@ -50,7 +120,8 @@ async function runUntilWorks(link) {
             const title = await scrape(link);
             resolve(title)
         } catch (e) {
-            console.log("try again")
+            // reject(e.message)
+            console.log("try again 1")
             // await browser.close();
             await sleep(3000)
             const title = await tryAgain(link);
@@ -81,7 +152,8 @@ async function readFile(file) {
         console.log(hasil)
     }
     var fs = require('fs');
-    fs.writeFileSync('final_link.txt', pop.join('\n '));
+    fs.writeFileSync('final_link.txt', pop.join('\n'));
+    console.log("FINISH")
 }
 readFile(argv.file)
 // runUntilWorks()
