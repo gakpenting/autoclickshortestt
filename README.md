@@ -1,3 +1,5 @@
+# AUTO SHORTE.ST LINK REVEAL WITH CAPTCHA BYPASS
+
 first install nodejs for windows
 
 then open command prompt in this folder
